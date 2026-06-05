@@ -1,0 +1,101 @@
+# ProTrack-Auto — Full-stack docker-compose
+#
+# Usage:
+#   docker-compose up --build
+#
+# Health check:
+#   curl http://localhost:5001/api/health
+#   → {"status":"OK","timestamp":"..."}
+#
+# The backend /api/health endpoint returns HTTP 200 with {"status":"OK"}
+# when all containers have started successfully.
+#
+# Required env vars (copy backend/.env.example → backend/.env and fill in):
+#   DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET
+#
+# Optional env vars (uncomment in backend/.env to enable):
+#   SMTP_*, REDIS_URL, S3_*, JWT_REFRESH_SECRET, EMAIL_VERIFICATION_DISABLED
+
+services:
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Backend — Node.js / Express / TypeScript API
+  # Exposes port 5001 on the host.
+  # Depends on the Postgres db service being healthy before starting.
+  # ────────────────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: "5001"
+      NODE_ENV: production
+      # Database — points to the db service defined below
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ${DB_NAME:-protrack_auto}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-protrack_auto}
+      # JWT
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-30d}
+      # Redis (optional — leave blank to disable caching)
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      # CORS
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      # SMTP (optional — leave blank to disable email)
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_SECURE: ${SMTP_SECURE:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      # S3 (optional — leave blank to use local disk storage)
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      # Email verification bypass
+      EMAIL_VERIFICATION_DISABLED: ${EMAIL_VERIFICATION_DISABLED:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Database — PostgreSQL 15
+  # Data is persisted in the named volume `postgres_data`.
+  # ────────────────────────────────────────────────────────────────────────────
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-protrack_auto}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Optionally seed the schema on first start:
+      # - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-protrack_auto}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # Redis 7 (optional) — used for analytics caching (5-minute TTL)
+  # The backend gracefully degrades when REDIS_URL is not configured, but
+  # when running via docker-compose this service is always available.
+  # Remove or comment out this service if you do not need caching.
+  # ────────────────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
