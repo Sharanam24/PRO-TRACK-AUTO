@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: protrack-auto-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: node dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "5001"
+      - key: DB_URL
+        fromDatabase:
+          name: protrack-auto-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false
+      - key: EMAIL_VERIFICATION_DISABLED
+        value: "true"
+
+databases:
+  - name: protrack-auto-db
+    databaseName: protrack_auto
+    user: protrack_user
+    plan: free
