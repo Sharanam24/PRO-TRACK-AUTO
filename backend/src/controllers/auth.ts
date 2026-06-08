@@ -29,7 +29,7 @@ export async function login(req: Request, res: Response): Promise<void> {
 
         // Find user by email — also join student_profiles to get PRN
         const users = await query(
-            `SELECT u.user_id, u.email, u.password_hash, u.role,
+            `SELECT u.user_id, u.email, u.password_hash, u.role, u.email_verified,
                     sp.prn_no, sp.roll_no, sp.batch_year
              FROM users u
              LEFT JOIN student_profiles sp ON sp.student_id = u.user_id
@@ -48,6 +48,15 @@ export async function login(req: Request, res: Response): Promise<void> {
         const passwordMatch = await comparePassword(password, user.password_hash);
         if (!passwordMatch) {
             res.status(401).json({ error: 'Invalid email or password' });
+            return;
+        }
+
+        // Block login if email not verified (skip check when EMAIL_VERIFICATION_DISABLED=true)
+        if (process.env.EMAIL_VERIFICATION_DISABLED !== 'true' && !user.email_verified) {
+            res.status(403).json({
+                error: 'Please verify your email address before logging in. Check your inbox for the verification link.',
+                code: 'EMAIL_NOT_VERIFIED',
+            });
             return;
         }
 
