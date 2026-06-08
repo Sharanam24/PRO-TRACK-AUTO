@@ -20,24 +20,25 @@ export const exportYearlyReport = async (req: Request, res: Response): Promise<v
         );
         
         // Simple JSON to CSV
-        const data: any[] = result;
+        interface ReportRow { group_name: string; group_status: string; guide_email: string | null; final_marks: number | null; students: { prn: string; email: string }[] }
+        const data = result as ReportRow[];
         if (data.length === 0) {
             res.send('No data available');
             return;
         }
 
         const header = ['Group Name', 'Status', 'Guide Email', 'Final Marks', 'Students'];
-        const rows = data.map((row: any) => [
+        const rows = data.map((row) => [
             row.group_name,
             row.group_status,
             row.guide_email || 'Unassigned',
             row.final_marks || 'N/A',
-            (row.students || []).map((s: any) => `${s.prn} (${s.email})`).join('; ')
+            (row.students || []).map((s) => `${s.prn} (${s.email})`).join('; ')
         ]);
 
         const csvContent = [
             header.join(','),
-            ...rows.map((r: any[]) => r.map((cell: any) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+            ...rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
         ].join('\\n');
 
         res.setHeader('Content-Type', 'text/csv');
@@ -75,7 +76,7 @@ export const autoGroupOrphans = async (req: Request, res: Response): Promise<voi
              WHERE m.group_id IS NULL AND u.role = 'STUDENT'`
         );
         
-        const orphans: any[] = result;
+        const orphans = result as { user_id: string }[];
         let createdGroups = 0;
         
         // Group in batches of 4
@@ -88,7 +89,7 @@ export const autoGroupOrphans = async (req: Request, res: Response): Promise<voi
                 `INSERT INTO project_groups (group_name, status) VALUES ($1, 'WAITING_ALLOCATION') RETURNING group_id`,
                 [groupName]
             );
-            const groupId = (groupResult as any[])[0].group_id;
+            const groupId = (groupResult as { group_id: string }[])[0].group_id;
             
             for (const student of batch) {
                 await query(

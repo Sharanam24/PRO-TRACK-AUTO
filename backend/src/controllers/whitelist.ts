@@ -14,7 +14,7 @@ export async function uploadWhitelist(req: AuthenticatedRequest, res: Response):
         }
 
         const originalName = req.file.originalname.toLowerCase();
-        let results: any[] = [];
+        let results: Record<string, string>[] = [];
 
         if (originalName.endsWith('.csv')) {
             const bufferStream = new Readable();
@@ -45,7 +45,7 @@ export async function uploadWhitelist(req: AuthenticatedRequest, res: Response):
     }
 }
 
-async function processResults(results: any[], res: Response) {
+async function processResults(results: Record<string, string>[], res: Response) {
     let successCount = 0;
     let errorCount = 0;
 

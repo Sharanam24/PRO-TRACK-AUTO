@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { cosineSimilarity, isReady, encodeBatch } from '../services/embeddingService.js';
+import { cosineSimilarity, isReady, encodeBatch } from '../../services/ml/embeddingService.js';
 
 // Inline L2-normalise helper used for the identity property test
 function normalize(v: number[]): number[] {

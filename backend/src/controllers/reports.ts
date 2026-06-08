@@ -2,7 +2,7 @@ import { Response } from 'express';
 import { query } from '../config/database.js';
 import { AuthenticatedRequest } from '../middleware/auth.js';
 import { generateMarksheetPDF, generateAttainmentPDF, MarksheetData, AttainmentReportData } from '../services/pdfService.js';
-import { computeAttainment } from '../services/attainmentService.js';
+import { computeAttainment } from '../services/ml/attainmentService.js';
 import { pool } from '../config/database.js';
 
 /**

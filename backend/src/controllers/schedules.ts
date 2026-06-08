@@ -54,7 +54,7 @@ export async function getSchedules(req: AuthenticatedRequest, res: Response): Pr
             FROM presentation_schedules s
             JOIN project_groups g ON s.group_id = g.group_id
         `;
-        let params: any[] = [];
+        let params: (string | undefined)[] = [];
 
         if (role === 'STUDENT') {
             sql += ` JOIN group_members gm ON gm.group_id = g.group_id WHERE gm.student_id = $1`;
@@ -84,7 +84,7 @@ export async function getSmartSlots(req: AuthenticatedRequest, res: Response): P
              WHERE presentation_time >= CURRENT_DATE`
         );
         
-        const bookedTimes = existingSchedules.map((row: any) => new Date(row.presentation_time).getTime());
+        const bookedTimes = existingSchedules.map((row: { presentation_time: string }) => new Date(row.presentation_time).getTime());
         
         const availableSlots = [];
         let currentDate = new Date();

@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { query, pool } from '../config/database.js';
 import { AuthenticatedRequest } from '../middleware/auth.js';
-import { rankGuides, GuideCandidate } from '../services/allocationEngine.js';
+import { rankGuides, GuideCandidate } from '../services/ml/allocationEngine.js';
 import { createNotification } from '../services/notificationService.js';
 
 // Recommend ranked guides for a project group (uses AI/ML allocation engine)

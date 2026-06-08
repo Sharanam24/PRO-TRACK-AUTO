@@ -7,7 +7,7 @@ import {
   computeMatchScore,
   rankGuides,
   type GuideCandidate,
-} from '../services/allocationEngine.js';
+} from '../../services/ml/allocationEngine.js';
 
 // ─── Property 1: Match_Score formula correctness ────────────────────────────
 // Note: When embeddingService is NOT ready (test environment), computeMatchScore

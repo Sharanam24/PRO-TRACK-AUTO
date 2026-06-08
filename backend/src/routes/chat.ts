@@ -24,7 +24,7 @@ router.get('/announcements', authenticateRequest, async (req, res) => {
 // Post a new global announcement (Coordinator only)
 router.post('/announcements', authenticateRequest, authorize('COORDINATOR'), async (req, res) => {
     const { content } = req.body;
-    const userId = (req as any).user.userId;
+    const userId = (req as any).user.user_id;
 
     try {
         const { rows } = await pool.query(
@@ -62,7 +62,7 @@ router.get('/group/:groupId', authenticateRequest, async (req, res) => {
 router.post('/group/:groupId', authenticateRequest, async (req, res) => {
     const { groupId } = req.params;
     const { content } = req.body;
-    const userId = (req as any).user.userId;
+    const userId = (req as any).user.user_id;
 
     try {
         const { rows } = await pool.query(

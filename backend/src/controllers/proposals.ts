@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { query } from '../config/database.js';
 import { AuthenticatedRequest } from '../middleware/auth.js';
-import { tagDomains } from '../services/domainTagger.js';
+import { tagDomains } from '../services/ml/domainTagger.js';
 
 // Submit a project proposal
 export async function submitProposal(req: AuthenticatedRequest, res: Response): Promise<void> {

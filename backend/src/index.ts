@@ -32,7 +32,7 @@ import reportsRoutes from './routes/reports.js';
 import { initCronJobs } from './cron/reminders.js';
 import { initChatSocket } from './socket/chatSocket.js';
 import { setSocketIo } from './services/notificationService.js';
-import { initEmbeddingModel, isReady as isEmbeddingReady } from './services/embeddingService.js';
+import { initEmbeddingModel, isReady as isEmbeddingReady } from './services/ml/embeddingService.js';
 
 dotenv.config();
 

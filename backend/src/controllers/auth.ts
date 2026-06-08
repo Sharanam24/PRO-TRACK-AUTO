@@ -286,7 +286,7 @@ export async function claimAccount(req: Request, res: Response): Promise<void> {
         } else if (role === 'GUIDE' || role === 'COMMITTEE' || role === 'COORDINATOR') {
             // Faculty/Committee claim: verify email (+ optional employee_id) against faculty_whitelist
             let whereClause = 'WHERE email = $1 AND role = $2';
-            let params: any[] = [email, role];
+            let params: (string | number)[] = [email, role];
 
             if (employee_id) {
                 whereClause += ' AND employee_id = $3';

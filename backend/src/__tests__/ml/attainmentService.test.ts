@@ -7,7 +7,7 @@ import {
   computeAttainment,
   computeSingleOutcomeAttainment,
   DbClient,
-} from '../services/attainmentService.js';
+} from '../../services/ml/attainmentService.js';
 
 // ─── Mock DB helper ──────────────────────────────────────────────────────────
 /**

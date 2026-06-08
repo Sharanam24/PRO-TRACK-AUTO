@@ -3,7 +3,7 @@
 
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { tagDomains, VALID_DOMAINS, extractDomain } from '../services/domainTagger.js';
+import { tagDomains, VALID_DOMAINS, extractDomain } from '../../services/ml/domainTagger.js';
 
 // ─── Property: tagDomains closed-domain invariant ───────────────────────────
 describe('tagDomains – closed-domain invariant', () => {

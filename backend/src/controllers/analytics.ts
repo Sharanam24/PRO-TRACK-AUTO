@@ -1,9 +1,9 @@
 import { Response } from 'express';
 import { query, pool } from '../config/database.js';
 import { AuthenticatedRequest } from '../middleware/auth.js';
-import { classifyAtRisk, DbClient } from '../services/atRiskClassifier.js';
+import { classifyAtRisk, DbClient } from '../services/ml/atRiskClassifier.js';
 import { withCache } from '../config/redis.js';
-import { computeAttainment } from '../services/attainmentService.js';
+import { computeAttainment } from '../services/ml/attainmentService.js';
 
 export const getGuideAnalytics = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {

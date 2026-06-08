@@ -3,7 +3,7 @@
 
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { classifyAtRisk, DbClient } from '../services/atRiskClassifier.js';
+import { classifyAtRisk, DbClient } from '../../services/ml/atRiskClassifier.js';
 
 function makeMockDb(config: {
   logbooks: number;

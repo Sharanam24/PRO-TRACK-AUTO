@@ -168,7 +168,7 @@ export const checkMilestoneReminders = async () => {
 export const runNightlyRiskScan = async () => {
     console.log('[Cron] Starting nightly risk scan...');
     try {
-        const { classifyAtRisk } = await import('../services/atRiskClassifier.js');
+        const { classifyAtRisk } = await import('../services/ml/atRiskClassifier.js');
 
         const db = {
             async query(text: string, params?: unknown[]) {

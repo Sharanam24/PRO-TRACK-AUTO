@@ -173,11 +173,11 @@ export async function getEvaluations(req: AuthenticatedRequest, res: Response): 
             FROM evaluations e
             JOIN project_groups g ON e.group_id = g.group_id
         `;
-        const params: any[] = [];
+        const params: (string | number)[] = [];
 
         if (group_id) {
             sql += ' WHERE e.group_id = $1';
-            params.push(group_id);
+            params.push(group_id as string);
         }
 
         sql += ' ORDER BY e.created_at DESC';
