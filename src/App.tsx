@@ -31,6 +31,7 @@ import { CommitteeEvaluationNew } from './pages/Committee/CommitteeEvaluationNew
 import { CommitteeResults } from './pages/Committee/CommitteeResults';
 import { CommitteeHistoricSearch } from './pages/Committee/CommitteeHistoricSearch';
 import GroupChat from './pages/GroupChat';
+import POPSOMapping from './pages/POPSOMapping';
 
 export default function App() {
     const { isAuthenticated, user } = useAuthStore();
@@ -111,6 +112,9 @@ export default function App() {
                 } />
                 <Route path="/coordinator/announcements" element={
                     <ProtectedRoute requiredRoles={['COORDINATOR']}><CoordinatorAnnouncements /></ProtectedRoute>
+                } />
+                <Route path="/coordinator/po-pso" element={
+                    <ProtectedRoute requiredRoles={['COORDINATOR']}><POPSOMapping /></ProtectedRoute>
                 } />
 
                 {/* ── Committee ── */}

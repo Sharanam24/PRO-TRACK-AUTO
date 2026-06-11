@@ -146,7 +146,46 @@ export default function AnalyticsDashboard() {
           <p className="text-muted-foreground mt-2 text-lg">AI-powered enterprise insights and performance tracking.</p>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 border border-white/10 bg-card font-medium rounded-lg hover:bg-white/5 transition-colors flex items-center gap-2">
+          <button
+            onClick={() => {
+              // Build CSV from current analytics data
+              const lines: string[] = [];
+
+              // Summary
+              lines.push('Summary');
+              lines.push('Metric,Value');
+              lines.push(`Active Groups,${dashboard?.total_active_groups ?? 0}`);
+              lines.push(`Guide Count,${dashboard?.guide_workload?.length ?? 0}`);
+              lines.push(`Avg Final Marks,${dashboard ? dashboard.avg_final_marks.toFixed(1) : 0}`);
+              lines.push(`At-Risk Groups,${dashboard?.at_risk_count ?? 0}`);
+              lines.push('');
+
+              // Performance trends
+              lines.push('Performance Trends');
+              lines.push('Week,Avg Score,Eval Count');
+              trends.forEach(t => {
+                lines.push(`Week ${t.week_number},${Math.round(t.avg_total_marks ?? 0)},${t.eval_count}`);
+              });
+              lines.push('');
+
+              // At-risk groups
+              lines.push('At-Risk Groups');
+              lines.push('Group Name,Guide Email,Members,Task Completion %,Risk Level');
+              atRiskGroups.forEach(g => {
+                lines.push(`"${g.group_name}","${g.guide_email ?? ''}",${g.member_count},${g.task_completion_pct.toFixed(1)},${g.risk_level}`);
+              });
+
+              const csv = lines.join('\n');
+              const blob = new Blob([csv], { type: 'text/csv' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `analytics-report-${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="px-4 py-2 border border-white/10 bg-card font-medium rounded-lg hover:bg-white/5 transition-colors flex items-center gap-2"
+          >
             <Download className="w-4 h-4" /> Export Report
           </button>
         </div>

@@ -231,3 +231,29 @@
 /* Backdrop */
 .backdrop-blur-sm { backdrop-filter: blur(4px) !important; }
 .backdrop-blur-xl { backdrop-filter: blur(24px) !important; }
+
+/* PO/PSO page colors */
+.text-purple-500 { color: #a855f7 !important; }
+.text-indigo-500 { color: #6366f1 !important; }
+.text-emerald-500 { color: #10b981 !important; }
+.text-rose-500 { color: #f43f5e !important; }
+.text-rose-400 { color: #fb7185 !important; }
+.text-emerald-300 { color: #6ee7b7 !important; }
+.text-red-300 { color: #fca5a5 !important; }
+.text-amber-500 { color: #f59e0b !important; }
+.text-blue-500 { color: #3b82f6 !important; }
+.bg-purple-500\/10 { background: rgba(168,85,247,0.1) !important; }
+.bg-indigo-500\/10 { background: rgba(99,102,241,0.1) !important; }
+.bg-rose-500\/10 { background: rgba(244,63,94,0.1) !important; }
+.bg-emerald-600 { background: #059669 !important; }
+.bg-emerald-700 { background: #047857 !important; }
+.bg-purple-600 { background: #9333ea !important; }
+.bg-purple-700 { background: #7e22ce !important; }
+.bg-amber-500\/20 { background: rgba(245,158,11,0.2) !important; }
+.bg-blue-500\/20 { background: rgba(59,130,246,0.2) !important; }
+.bg-emerald-500\/20 { background: rgba(16,185,129,0.2) !important; }
+.shadow-emerald-500\/20 { box-shadow: 0 4px 24px rgba(16,185,129,0.2) !important; }
+.shadow-purple-500\/20 { box-shadow: 0 4px 24px rgba(168,85,247,0.2) !important; }
+.border-purple-500\/20 { border-color: rgba(168,85,247,0.2) !important; }
+.border-indigo-500\/20 { border-color: rgba(99,102,241,0.2) !important; }
+.border-rose-500\/20 { border-color: rgba(244,63,94,0.2) !important; }
