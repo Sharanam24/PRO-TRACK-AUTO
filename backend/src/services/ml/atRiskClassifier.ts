@@ -44,7 +44,7 @@ export async function classifyAtRisk(
     `SELECT COUNT(*) as count, MAX(created_at) as last_date
      FROM logbooks
      WHERE group_id = $1
-       AND status = 'APPROVED'
+       AND guide_status = 'APPROVED'
        AND created_at >= NOW() - INTERVAL '21 days'`,
     [groupId],
   );
@@ -60,7 +60,7 @@ export async function classifyAtRisk(
   const taskResult = await db.query(
     `SELECT COUNT(*) as total,
             COUNT(*) FILTER (WHERE status = 'DONE') as done
-     FROM tasks
+     FROM group_tasks
      WHERE group_id = $1`,
     [groupId],
   );

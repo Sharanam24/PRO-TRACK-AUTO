@@ -83,20 +83,30 @@ export const CoordinatorUsers: React.FC = () => {
     };
 
     const handleExportCSV = () => {
-        if (whitelist.length === 0) return;
+        if (whitelist.length === 0) {
+            showToast('error', 'No data to export. Upload a student whitelist first.');
+            return;
+        }
         const csvContent = [
             ['PRN No', 'Full Name', 'Email', 'Is Claimed'],
-            ...whitelist.map(s => [s.prn_no, s.full_name, s.email, s.is_claimed ? 'Yes' : 'No'])
+            ...whitelist.map(s => [
+                `"${s.prn_no || ''}"`,
+                `"${s.full_name || ''}"`,
+                `"${s.email || ''}"`,
+                s.is_claimed ? 'Yes' : 'No'
+            ])
         ].map(e => e.join(",")).join("\n");
         
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
-        link.setAttribute("download", "student_whitelist.csv");
+        link.setAttribute("download", `student_whitelist_${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showToast('success', `Exported ${whitelist.length} student records to CSV.`);
     };
 
     const handleUploadWhitelist = async () => {

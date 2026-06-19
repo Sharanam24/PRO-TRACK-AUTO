@@ -57,7 +57,7 @@ export const GuideDashboardNew: React.FC = () => {
             setIsLoading(true);
             const data = await api.getGroups(token);
             const groupList = Array.isArray(data) ? data : [];
-            setGroups(groupList);
+            setGroups(groupList as any[]);
 
             // Fetch pending logbooks for each group
             let allPending: Logbook[] = [];
@@ -232,7 +232,7 @@ export const GuideDashboardNew: React.FC = () => {
                                         </td>
                                         <td className="py-4 px-5">
                                             <button
-                                                onClick={() => handleReviewClick(logbook, 'group-1')}
+                                                onClick={() => handleReviewClick(logbook, logbook.group_id)}
                                                 className="flex items-center gap-1 text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors"
                                             >
                                                 Review <ChevronRight size={13} />

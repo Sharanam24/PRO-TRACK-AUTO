@@ -9,8 +9,15 @@ interface Member {
     prn_no: string;
 }
 
+interface Group {
+    group_id: string;
+    group_name: string;
+    status: string;
+}
+
 export const StudentPeerEvaluation: React.FC = () => {
     const { token, user } = useAuthStore();
+    const [allGroups, setAllGroups] = useState<Group[]>([]);
     const [groupId, setGroupId] = useState<string | null>(null);
     const [members, setMembers] = useState<Member[]>([]);
     const [submittedIds, setSubmittedIds] = useState<string[]>([]);
@@ -19,37 +26,54 @@ export const StudentPeerEvaluation: React.FC = () => {
 
     const [evaluations, setEvaluations] = useState<Record<string, { score: number; comments: string }>>({});
 
+    const loadMembers = async (gId: string) => {
+        if (!token) return;
+        try {
+            setIsLoading(true);
+            setError('');
+            const membersData = await api.getMembers(token, gId);
+            const peers = membersData.filter((m: any) => m.student_id !== user?.user_id);
+            setMembers(peers);
+            const initialEval: any = {};
+            peers.forEach((p: any) => { initialEval[p.student_id] = { score: 5, comments: '' }; });
+            setEvaluations(initialEval);
+            setSubmittedIds([]);
+        } catch {
+            setError('Failed to load group members');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchGroupAndMembers = async () => {
+        const fetchGroups = async () => {
             if (!token) return;
             try {
                 setIsLoading(true);
                 const groups = await api.getGroups(token);
-                const active = groups.find((g: any) => g.status === 'ACTIVE' || g.status === 'WAITING_ALLOCATION');
-                if (active) {
-                    setGroupId(active.group_id);
-                    const membersData = await api.getMembers(token, active.group_id);
-                    // Filter out current user
-                    const peers = membersData.filter((m: any) => m.student_id !== user?.user_id);
-                    setMembers(peers);
-                    
-                    // Initialize evaluation state
-                    const initialEval: any = {};
-                    peers.forEach((p: any) => {
-                        initialEval[p.student_id] = { score: 5, comments: '' };
-                    });
-                    setEvaluations(initialEval);
-                } else {
+                const eligible = groups.filter((g: any) =>
+                    g.status === 'ACTIVE' || g.status === 'WAITING_ALLOCATION' || g.status === 'FORMING'
+                );
+                if (eligible.length === 0) {
                     setError('You do not have an active group to evaluate.');
+                    setIsLoading(false);
+                    return;
                 }
-            } catch (err) {
-                setError('Failed to load group members');
-            } finally {
+                setAllGroups(eligible);
+                setGroupId(eligible[0].group_id);
+                await loadMembers(eligible[0].group_id);
+            } catch {
+                setError('Failed to load groups');
                 setIsLoading(false);
             }
         };
-        fetchGroupAndMembers();
-    }, [token, user]);
+        fetchGroups();
+    }, [token, user]); // eslint-disable-line
+
+    const handleGroupSwitch = async (gId: string) => {
+        setGroupId(gId);
+        await loadMembers(gId);
+    };
 
     const handleSubmit = async (evaluateeId: string) => {
         if (!token || !groupId) return;
@@ -88,6 +112,28 @@ export const StudentPeerEvaluation: React.FC = () => {
                 <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-300">
                     <AlertCircle size={18} />
                     <span className="text-sm">{error}</span>
+                </div>
+            )}
+
+            {/* Group selector — shown when student belongs to multiple groups */}
+            {!error && allGroups.length > 1 && (
+                <div className="mb-6 flex items-center gap-3">
+                    <p className="text-xs font-bold text-white/40 uppercase tracking-widest">Group:</p>
+                    <div className="flex gap-2 flex-wrap">
+                        {allGroups.map(g => (
+                            <button
+                                key={g.group_id}
+                                onClick={() => handleGroupSwitch(g.group_id)}
+                                className={`px-4 py-1.5 rounded-xl text-sm font-semibold transition-all ${
+                                    groupId === g.group_id
+                                        ? 'bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg'
+                                        : 'text-white/50 hover:text-white bg-white/[0.04] border border-white/[0.08]'
+                                }`}
+                            >
+                                {g.group_name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             )}
 
@@ -162,7 +208,9 @@ export const StudentPeerEvaluation: React.FC = () => {
             
             {!isLoading && !error && members.length === 0 && groupId && (
                 <div className="text-center py-12">
+                    <Users size={32} className="text-white/10 mx-auto mb-3" />
                     <p className="text-white/40">No other members in your group to evaluate.</p>
+                    <p className="text-white/25 text-sm mt-1">Ask your teammates to join the group first.</p>
                 </div>
             )}
         </AppShell>

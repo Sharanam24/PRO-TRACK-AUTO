@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { Server } from 'socket.io';
+import rateLimit from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger.js';
 import { testConnection } from './config/database.js';
@@ -52,6 +53,30 @@ export const io = new Server(httpServer, {
     },
 });
 
+// ─── Global API rate limiter ─────────────────────────────────────────────────
+// Limits each IP to 100 requests per 15-minute window across all /api routes.
+// Auth-specific endpoints have stricter per-route limiters (see routes/auth.ts).
+const globalApiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 500,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        error: 'Too many requests from this IP. Please try again later.',
+        code: 'RATE_LIMIT_EXCEEDED',
+    },
+    // Skip rate limiting for health check and docs
+    skip: (req: Request) => req.path === '/api/health' || req.path.startsWith('/api/docs'),
+});
+
+// ─── CSRF Protection ─────────────────────────────────────────────────────────
+// This API uses stateless JWT tokens sent via the Authorization header (not
+// cookies). CSRF attacks exploit cookie-based authentication by tricking the
+// browser into sending cookies automatically. Since this app never reads auth
+// credentials from cookies, CSRF protection is not applicable. The combination
+// of CORS origin restrictions + JWT in Authorization header provides equivalent
+// protection against cross-origin request forgery.
+
 // Middleware
 app.use(cors({
     origin: CORS_ORIGIN,
@@ -59,6 +84,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use('/api', globalApiLimiter);
 
 // Serve static files from the uploads directory
 import path from 'path';

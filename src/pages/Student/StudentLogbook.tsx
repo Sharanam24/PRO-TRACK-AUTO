@@ -19,50 +19,17 @@ interface Logbook {
     created_at: string;
 }
 
-// ─── Dummy logbook entries ─────────────────────────────────────────
-const DUMMY_GROUPS: Group[] = [
-    { group_id: 'grp-1', group_name: 'AI Research Team', status: 'ACTIVE' },
-    { group_id: 'grp-2', group_name: 'Web Dev Squad', status: 'WAITING_ALLOCATION' },
-];
 
-const DUMMY_LOGBOOKS: Record<string, Logbook[]> = {
-    'grp-1': [
-        {
-            log_id: 'l8', week_number: 8, work_summary: 'Finalized the model training pipeline. Achieved 92% accuracy on the test dataset using CNN with data augmentation. Prepared presentation for internal review.', guide_status: 'PENDING', created_at: '2025-03-15',
-        },
-        {
-            log_id: 'l7', week_number: 7, work_summary: 'Integrated OpenCV for real-time face detection. Resolved memory leak in the video stream handler. Documented the detection module with JSDoc.', guide_status: 'APPROVED', guide_remarks: 'Excellent progress! The accuracy improvement is notable. Keep up the good work.', evidence_url: 'https://github.com/team-alpha/attendance-ai/commit/abc123', created_at: '2025-03-08',
-        },
-        {
-            log_id: 'l6', week_number: 6, work_summary: 'Set up the database schema for storing attendance records. Created REST API endpoints for CRUD operations. Wrote unit tests for all endpoints.', guide_status: 'APPROVED', guide_remarks: 'Good structured approach. Make sure to add input validation.', created_at: '2025-03-01',
-        },
-        {
-            log_id: 'l5', week_number: 5, work_summary: 'Researched face recognition libraries — compared DeepFace, face_recognition and InsightFace. Selected InsightFace for its speed. Set up the development environment.', guide_status: 'APPROVED', guide_remarks: 'Great literature survey. The comparison table is very clear.', created_at: '2025-02-22',
-        },
-        {
-            log_id: 'l4', week_number: 4, work_summary: 'Completed system architecture diagram and finalized technology stack. Presented the plan to team members. Assigned module ownership.', guide_status: 'NEEDS_REVISION', guide_remarks: 'Please revise the architecture — the database connection layer needs more detail.', created_at: '2025-02-15',
-        },
-    ],
-    'grp-2': [
-        {
-            log_id: 'l3', week_number: 3, work_summary: 'Built the real-time text editor using Yjs CRDT. Implemented WebSocket connection with socket.io. Tested with 3 concurrent users — no conflicts.', guide_status: 'PENDING', created_at: '2025-03-10',
-        },
-        {
-            log_id: 'l2', week_number: 2, work_summary: 'Set up the Next.js project with TypeScript. Configured ESLint, Prettier and Husky pre-commit hooks. Created the basic page layout and routing.', guide_status: 'APPROVED', guide_remarks: 'Well-organized start. Continue this structured approach.', created_at: '2025-03-03',
-        },
-    ],
-};
-// ─────────────────────────────────────────────────────────────────
 
 export const StudentLogbook: React.FC = () => {
     const { token } = useAuthStore();
-    const [groups, setGroups] = useState<Group[]>(DUMMY_GROUPS);
-    const [selectedGroupId, setSelectedGroupId] = useState<string>('grp-1');
-    const [logbooks, setLogbooks] = useState<Logbook[]>(DUMMY_LOGBOOKS['grp-1']);
+    const [groups, setGroups] = useState<Group[]>([]);
+    const [selectedGroupId, setSelectedGroupId] = useState<string>('');
+    const [logbooks, setLogbooks] = useState<Logbook[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
-    const [expandedId, setExpandedId] = useState<string | null>('l8');
+    const [expandedId, setExpandedId] = useState<string | null>(null);
     const [showSubmitModal, setShowSubmitModal] = useState(false);
 
     const [weekNumber, setWeekNumber] = useState('');
@@ -81,22 +48,23 @@ export const StudentLogbook: React.FC = () => {
         try {
             const data = await api.getGroups(token);
             const list = Array.isArray(data) ? data : [];
-            if (list.length > 0) { setGroups(list); setSelectedGroupId(list[0].group_id); }
-        } catch (_err) { /* keep dummy */ }
+            if (list.length > 0) {
+                setGroups(list);
+                setSelectedGroupId(list[0].group_id);
+            }
+        } catch (_err) { /* keep empty */ }
     };
 
     const fetchLogbooks = async (groupId: string) => {
-        if (!token || !groupId) {
-            setLogbooks(DUMMY_LOGBOOKS[groupId] ?? []);
-            return;
-        }
+        if (!token || !groupId) return;
         try {
             setIsLoading(true);
             const data = await api.getLogbooks(token, groupId);
-            const list = Array.isArray(data) ? data : [];
-            setLogbooks(list.length > 0 ? list.sort((a, b) => b.week_number - a.week_number) : (DUMMY_LOGBOOKS[groupId] ?? []));
+            const raw = (data as any);
+            const list: Logbook[] = Array.isArray(raw) ? raw : (raw?.logbooks ?? []);
+            setLogbooks(list.sort((a, b) => b.week_number - a.week_number));
         } catch (_err) {
-            setLogbooks(DUMMY_LOGBOOKS[groupId] ?? []);
+            setLogbooks([]);
         } finally {
             setIsLoading(false);
         }
@@ -107,7 +75,7 @@ export const StudentLogbook: React.FC = () => {
 
     const handleGroupChange = (id: string) => {
         setSelectedGroupId(id);
-        setLogbooks(DUMMY_LOGBOOKS[id] ?? []);
+        setLogbooks([]);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {

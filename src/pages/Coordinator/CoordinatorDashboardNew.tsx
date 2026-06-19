@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { AppShell } from '../../layouts/AppShell';
 import { useAuthStore } from '../../store/authStore';
 import { api } from '../../lib/apiClient';
-import { Users, BookOpen, AlertOctagon, TrendingUp, Sparkles, Activity, Zap } from 'lucide-react';
+import { Users, BookOpen, AlertOctagon, TrendingUp, Sparkles, Activity, Zap, CheckCircle2, X } from 'lucide-react';
 import { BarChart, Bar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { motion } from 'framer-motion';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Dummy data for charts until Phase 5
 const workloadData = [
@@ -29,6 +31,13 @@ export const CoordinatorDashboardNew: React.FC = () => {
     const { token } = useAuthStore();
     const [stats, setStats] = useState({ totalGroups: 0, unassigned: 0, active: 0, totalStudents: 0 });
     const [isLoading, setIsLoading] = useState(false);
+    const [isTriggering, setIsTriggering] = useState(false);
+    const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+
+    const showToast = (type: 'success' | 'error', msg: string) => {
+        setToast({ type, msg });
+        setTimeout(() => setToast(null), 4000);
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -38,7 +47,7 @@ export const CoordinatorDashboardNew: React.FC = () => {
                 const groupsData = await api.getGroups(token);
                 const groupList = Array.isArray(groupsData) ? groupsData : [];
                 if (groupList.length > 0) {
-                    const totalStudents = groupList.reduce((acc, g) => acc + parseInt(g.member_count || '0', 10), 0);
+                    const totalStudents = groupList.reduce((acc, g) => acc + (g.member_count ?? 0), 0);
                     setStats({
                         totalGroups: groupList.length,
                         unassigned: groupList.filter(g => g.status === 'WAITING_ALLOCATION').length,
@@ -55,31 +64,161 @@ export const CoordinatorDashboardNew: React.FC = () => {
         fetchData();
     }, [token]);
 
+    /** Export all analytics data as a CSV file */
+    const handleExportAnalytics = () => {
+        const lines: string[] = [];
+
+        // Summary KPIs
+        lines.push('Coordinator Analytics Summary');
+        lines.push('Metric,Value');
+        lines.push(`Total Students,${stats.totalStudents}`);
+        lines.push(`Total Projects,${stats.totalGroups}`);
+        lines.push(`Unassigned Groups,${stats.unassigned}`);
+        lines.push(`Active Groups,${stats.active}`);
+        lines.push(`Avg Milestone Completion,68%`);
+        lines.push('');
+
+        // Guide Workload
+        lines.push('Guide Workload Distribution');
+        lines.push('Guide,Groups Assigned');
+        workloadData.forEach(w => {
+            lines.push(`${w.name},${w.groups}`);
+        });
+        lines.push('');
+
+        // PO/PSO Attainment Radar
+        lines.push('PO/PSO Attainment Tracking');
+        lines.push('Outcome,Attainment,Full Mark');
+        radarData.forEach(r => {
+            lines.push(`${r.subject},${r.A},${r.fullMark}`);
+        });
+
+        const csv = lines.join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `coordinator-analytics-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    /** Export analytics as a professional PDF report */
+    const handleExportPDF = () => {
+        const doc = new jsPDF();
+
+        // Title
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Coordinator Analytics Report', 14, 22);
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+
+        // KPI Summary
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Summary KPIs', 14, 44);
+        autoTable(doc, {
+            startY: 48,
+            head: [['Metric', 'Value']],
+            body: [
+                ['Total Students', String(stats.totalStudents)],
+                ['Total Projects', String(stats.totalGroups)],
+                ['Unassigned Groups', String(stats.unassigned)],
+                ['Active Groups', String(stats.active)],
+                ['Avg Milestone Completion', '68%'],
+            ],
+            theme: 'grid',
+            headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
+            margin: { left: 14, right: 14 },
+        });
+
+        // Guide Workload
+        const afterKPI = (doc as any).lastAutoTable?.finalY ?? 100;
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Guide Workload Distribution', 14, afterKPI + 14);
+        autoTable(doc, {
+            startY: afterKPI + 18,
+            head: [['Guide', 'Groups Assigned', 'Status']],
+            body: workloadData.map(w => [
+                w.name,
+                String(w.groups),
+                w.groups > 6 ? 'Overloaded' : w.groups < 3 ? 'Under-utilized' : 'Balanced',
+            ]),
+            theme: 'grid',
+            headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold' },
+            margin: { left: 14, right: 14 },
+        });
+
+        // PO/PSO Tracking
+        const afterWorkload = (doc as any).lastAutoTable?.finalY ?? 160;
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PO/PSO Attainment Tracking', 14, afterWorkload + 14);
+        autoTable(doc, {
+            startY: afterWorkload + 18,
+            head: [['Outcome', 'Attainment', 'Full Mark', 'Coverage %']],
+            body: radarData.map(r => [
+                r.subject,
+                String(r.A),
+                String(r.fullMark),
+                `${Math.round((r.A / r.fullMark) * 100)}%`,
+            ]),
+            theme: 'grid',
+            headStyles: { fillColor: [139, 92, 246], textColor: 255, fontStyle: 'bold' },
+            margin: { left: 14, right: 14 },
+        });
+
+        doc.save(`coordinator-analytics-${new Date().toISOString().split('T')[0]}.pdf`);
+    };
+
     return (
         <AppShell currentPage="/coordinator/dashboard">
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {/* Toast */}
+                {toast && (
+                    <div className={`fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-sm font-semibold animate-slide-up ${
+                        toast.type === 'success'
+                            ? 'bg-emerald-900/90 border-emerald-500/30 text-emerald-300'
+                            : 'bg-red-900/90 border-red-500/30 text-red-300'
+                    }`}>
+                        {toast.type === 'success' ? <CheckCircle2 size={16} /> : <X size={16} />}
+                        {toast.msg}
+                        <button onClick={() => setToast(null)} className="ml-2 opacity-60 hover:opacity-100"><X size={13} /></button>
+                    </div>
+                )}
+
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight text-white">Coordinator Analytics</h2>
                         <p className="text-white/60 mt-1 text-lg">Department-level insights, PSO tracking, and workload distribution.</p>
                     </div>
                     <div className="flex gap-3">
-                        <button 
+                        <button
                             onClick={async () => {
+                                if (!token || isTriggering) return;
+                                setIsTriggering(true);
                                 try {
-                                    if (token) {
-                                        await api.triggerReminders(token);
-                                        alert('Overdue reminders check triggered successfully! System alerts have been sent to applicable groups.');
-                                    }
+                                    const result = await api.triggerReminders(token);
+                                    showToast('success', `Overdue reminders triggered! ${result?.details?.alerted ?? 0} group(s) alerted.`);
                                 } catch (err: any) {
-                                    alert(err.message || 'Failed to trigger reminders');
+                                    showToast('error', err.message || 'Failed to trigger reminders');
+                                } finally {
+                                    setIsTriggering(false);
                                 }
                             }}
-                            className="px-4 py-2 bg-gradient-to-r from-rose-500 to-red-600 text-white font-medium rounded-lg hover:shadow-lg hover:shadow-red-500/20 transition-all flex items-center gap-2"
+                            disabled={isTriggering}
+                            className="px-4 py-2 bg-gradient-to-r from-rose-500 to-red-600 text-white font-medium rounded-lg hover:shadow-lg hover:shadow-red-500/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <AlertOctagon className="w-4 h-4" /> Trigger Overdue Reminders
+                            <AlertOctagon className={`w-4 h-4 ${isTriggering ? 'animate-spin' : ''}`} />
+                            {isTriggering ? 'Triggering…' : 'Trigger Overdue Reminders'}
                         </button>
-                        <button className="px-4 py-2 bg-slate-800 border border-white/10 text-white font-medium rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2">
+                        <button
+                            onClick={handleExportAnalytics}
+                            className="px-4 py-2 bg-slate-800 border border-white/10 text-white font-medium rounded-lg hover:bg-slate-700 transition-colors flex items-center gap-2"
+                        >
                             <Activity className="w-4 h-4" /> Export Analytics
                         </button>
                     </div>

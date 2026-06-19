@@ -52,10 +52,13 @@ export const CoordinatorSchedules: React.FC = () => {
                 api.getSchedules(token),
                 api.getSettings(token).catch(() => ({}))
             ]);
+            const settingsMap = Array.isArray(fetchedSettings) 
+                ? Object.fromEntries(fetchedSettings.map((s: any) => [s.key, s.value]))
+                : fetchedSettings as Record<string, any>;
             setGroups(fetchedGroups);
-            setSchedules(fetchedSchedules);
-            if (fetchedSettings.project_timelines) {
-                setGlobalTimelines(fetchedSettings.project_timelines);
+            setSchedules(fetchedSchedules.map(s => ({ ...s, group_name: s.group_name ?? '' })));
+            if (settingsMap['project_timelines']) {
+                setGlobalTimelines(settingsMap['project_timelines']);
             }
         } catch (error) {
             console.error("Failed to fetch scheduling data");
@@ -73,17 +76,16 @@ export const CoordinatorSchedules: React.FC = () => {
         try {
             setIsLoading(true);
             const data = await api.getSmartSlots(token);
-            if (data.slots && data.slots.length > 0) {
-                const nextSlot = new Date(data.slots[0]);
+            const slots = (data as any).slots || data.suggested_slots || [];
+            if (slots.length > 0) {
+                const nextSlot = new Date(slots[0]);
                 const yyyy = nextSlot.getFullYear();
                 const mm = String(nextSlot.getMonth() + 1).padStart(2, '0');
                 const dd = String(nextSlot.getDate()).padStart(2, '0');
                 setDate(`${yyyy}-${mm}-${dd}`);
-                
                 const hh = String(nextSlot.getHours()).padStart(2, '0');
                 const min = String(nextSlot.getMinutes()).padStart(2, '0');
                 setTime(`${hh}:${min}`);
-                
                 setToast('Found an open slot!');
                 setTimeout(() => setToast(null), 3000);
             } else {

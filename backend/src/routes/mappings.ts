@@ -62,9 +62,6 @@ router.post(
             .isString()
             .isIn(['PO', 'PSO'])
             .withMessage('mapping_type must be one of: PO, PSO'),
-        body('batch_year')
-            .isInt()
-            .withMessage('batch_year must be an integer'),
         body('mappings')
             .exists()
             .withMessage('mappings is required'),

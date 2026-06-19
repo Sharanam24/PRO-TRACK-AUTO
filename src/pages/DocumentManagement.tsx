@@ -301,7 +301,14 @@ export default function DocumentManagement() {
                   <button onClick={() => setShowHistory(!showHistory)} className={cn("p-2 rounded-lg transition-colors", showHistory ? "bg-indigo-500/10 text-indigo-400" : "hover:bg-white/10 text-muted-foreground")}>
                     <History className="w-4 h-4" />
                   </button>
-                  <button className="p-2 rounded-lg hover:bg-white/10 text-muted-foreground transition-colors">
+                  <button
+                    onClick={() => {
+                      const a = document.createElement('a');
+                      a.href = '#';
+                      a.download = selectedDoc.name;
+                      a.click();
+                    }}
+                    className="p-2 rounded-lg hover:bg-white/10 text-muted-foreground transition-colors">
                     <Download className="w-4 h-4" />
                   </button>
                   <button className="p-2 rounded-lg hover:bg-white/10 text-muted-foreground transition-colors">
@@ -343,7 +350,8 @@ export default function DocumentManagement() {
                     {(() => { const Ic = categoryConfig[selectedDoc.category].icon; return <Ic className={cn("w-16 h-16 mx-auto mb-4 opacity-20", categoryConfig[selectedDoc.category].color)} />; })()}
                     <h4 className="font-semibold text-foreground">{selectedDoc.name}</h4>
                     <p className="text-sm text-muted-foreground mt-2">Preview not available in this mode.</p>
-                    <button className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2 mx-auto">
+                    <button className="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2 mx-auto"
+                      onClick={() => window.open('#', '_blank')}>
                       <Eye className="w-4 h-4" /> Open Full Preview
                     </button>
                   </div>
@@ -376,7 +384,9 @@ export default function DocumentManagement() {
                                   <span className="text-[10px] text-muted-foreground">{v.date}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{v.note}</p>
-                                <button className="text-[10px] text-indigo-400 hover:text-indigo-300 mt-1">Restore</button>
+                                <button
+                                  onClick={() => alert(`Restoring to ${v.version}...`)}
+                                  className="text-[10px] text-indigo-400 hover:text-indigo-300 mt-1">Restore</button>
                               </div>
                             </div>
                           ))}

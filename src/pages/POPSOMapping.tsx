@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
+import { api } from "@/lib/apiClient";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
@@ -9,6 +10,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
+import { AppShell } from "@/layouts/AppShell";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 // Program Outcomes
 const POs = ["PO1", "PO2", "PO3", "PO4", "PO5", "PO6", "PO7", "PO8", "PO9", "PO10", "PO11", "PO12"];
@@ -86,12 +90,8 @@ export default function POPSOMapping() {
     setIsLoading(true);
     try {
       const [poRes, psoRes] = await Promise.all([
-        fetch(`/api/mappings?batch_year=${batchYear}&type=PO`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then(r => r.json()),
-        fetch(`/api/mappings?batch_year=${batchYear}&type=PSO`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }).then(r => r.json()),
+        api.getMappings(token, batchYear, 'PO'),
+        api.getMappings(token, batchYear, 'PSO'),
       ]);
       setPOMatrix(mergeWithDefaults(poRes.mappings ?? {}, POs));
       setPSOMatrix(mergeWithDefaults(psoRes.mappings ?? {}, PSOs));
@@ -112,32 +112,8 @@ export default function POPSOMapping() {
     setIsSaving(true);
     try {
       await Promise.all([
-        fetch('/api/mappings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ batch_year: batchYear, type: 'PO', mappings: poMatrix }),
-        }).then(async r => {
-          if (!r.ok) {
-            const err = await r.json();
-            throw new Error(err.error || 'Failed to save PO mappings');
-          }
-        }),
-        fetch('/api/mappings', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ batch_year: batchYear, type: 'PSO', mappings: psoMatrix }),
-        }).then(async r => {
-          if (!r.ok) {
-            const err = await r.json();
-            throw new Error(err.error || 'Failed to save PSO mappings');
-          }
-        }),
+        api.saveMappings(token, 'PO', poMatrix, batchYear),
+        api.saveMappings(token, 'PSO', psoMatrix, batchYear),
       ]);
       showToast('success', 'PO/PSO mappings saved successfully');
     } catch (err) {
@@ -190,7 +166,149 @@ export default function POPSOMapping() {
 
   const aboveThreshold = poAttainment.filter(p => p.value >= p.threshold).length;
 
+  /** Export PO/PSO mapping data as a CSV file */
+  const handleExportCSV = () => {
+    const lines: string[] = [];
+
+    // PO Mapping Matrix
+    lines.push('PO Mapping Matrix');
+    lines.push(['Criteria', ...POs].join(','));
+    criteria.forEach(c => {
+      const row = [c.label, ...POs.map(po => String(poMatrix[c.id][po]))];
+      lines.push(row.join(','));
+    });
+    lines.push('');
+
+    // PSO Mapping Matrix
+    lines.push('PSO Mapping Matrix');
+    lines.push(['Criteria', ...PSOs].join(','));
+    criteria.forEach(c => {
+      const row = [c.label, ...PSOs.map(pso => String(psoMatrix[c.id][pso]))];
+      lines.push(row.join(','));
+    });
+    lines.push('');
+
+    // PO Attainment
+    lines.push('PO Attainment');
+    lines.push('PO,Attainment %,Target %,Status');
+    poAttainment.forEach(p => {
+      lines.push(`${p.name},${p.value},${p.threshold},${p.value >= p.threshold ? 'Achieved' : 'Below Target'}`);
+    });
+    lines.push('');
+
+    // PSO Attainment
+    lines.push('PSO Attainment');
+    lines.push('PSO,Attainment %,Target %,Status');
+    psoAttainment.forEach(p => {
+      lines.push(`${p.name},${p.value},${p.threshold},${p.value >= p.threshold ? 'Achieved' : 'Below Target'}`);
+    });
+
+    const csv = lines.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `po-pso-report-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  /** Download PO/PSO mapping data as a PDF */
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF({ orientation: 'landscape' });
+    const levelMap: Record<number, string> = { 0: '-', 1: 'Low', 2: 'Medium', 3: 'High' };
+    const poDescriptions: Record<string, string> = {
+      PO1: 'Engineering Knowledge', PO2: 'Problem Analysis', PO3: 'Design Solutions',
+      PO4: 'Conduct Investigations', PO5: 'Modern Tool Usage', PO6: 'Engineer & Society',
+      PO7: 'Environment & Sustainability', PO8: 'Ethics', PO9: 'Team Work',
+      PO10: 'Communication', PO11: 'Project Management', PO12: 'Life-long Learning',
+    };
+
+    // Title
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PO / PSO Mapping Report', 14, 20);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+
+    // PO Mapping Matrix table
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Criteria → PO Mapping Matrix', 14, 40);
+    autoTable(doc, {
+      startY: 44,
+      head: [['Criteria', ...POs]],
+      body: criteria.map(c => [c.label, ...POs.map(po => levelMap[poMatrix[c.id][po]])]),
+      theme: 'grid',
+      headStyles: { fillColor: [107, 79, 187], textColor: 255, fontStyle: 'bold', fontSize: 8 },
+      bodyStyles: { fontSize: 8, halign: 'center' },
+      columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
+      margin: { left: 14, right: 14 },
+    });
+
+    // PSO Mapping Matrix table
+    const afterPO = (doc as any).lastAutoTable?.finalY ?? 120;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Criteria → PSO Mapping Matrix', 14, afterPO + 12);
+    autoTable(doc, {
+      startY: afterPO + 16,
+      head: [['Criteria', ...PSOs]],
+      body: criteria.map(c => [c.label, ...PSOs.map(pso => levelMap[psoMatrix[c.id][pso]])]),
+      theme: 'grid',
+      headStyles: { fillColor: [79, 70, 229], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+      bodyStyles: { fontSize: 9, halign: 'center' },
+      columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
+      margin: { left: 14, right: 14 },
+    });
+
+    // PO Attainment Summary
+    const afterPSO = (doc as any).lastAutoTable?.finalY ?? 180;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PO Attainment Summary', 14, afterPSO + 12);
+    autoTable(doc, {
+      startY: afterPSO + 16,
+      head: [['Program Outcome', 'Description', 'Attainment %', 'Target %', 'Status']],
+      body: poAttainment.map(p => [
+        p.name,
+        poDescriptions[p.name] || '',
+        `${p.value}%`,
+        `${p.threshold}%`,
+        p.value >= p.threshold ? '✓ Achieved' : '✗ Below Target',
+      ]),
+      theme: 'grid',
+      headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      margin: { left: 14, right: 14 },
+    });
+
+    // PSO Attainment Summary
+    const afterAtt = (doc as any).lastAutoTable?.finalY ?? 220;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PSO Attainment Summary', 14, afterAtt + 12);
+    autoTable(doc, {
+      startY: afterAtt + 16,
+      head: [['PSO', 'Attainment %', 'Target %', 'Status']],
+      body: psoAttainment.map(p => [
+        p.name,
+        `${p.value}%`,
+        `${p.threshold}%`,
+        p.value >= p.threshold ? '✓ Achieved' : '✗ Below Target',
+      ]),
+      theme: 'grid',
+      headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold', fontSize: 9 },
+      bodyStyles: { fontSize: 9 },
+      margin: { left: 14, right: 14 },
+    });
+
+    doc.save(`po-pso-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   return (
+    <AppShell currentPage="/coordinator/po-pso">
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Toast */}
       {toast && (
@@ -207,19 +325,20 @@ export default function POPSOMapping() {
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-            <div className="p-2 bg-purple-500/10 rounded-xl">
-              <Grid3x3 className="w-8 h-8 text-purple-500" />
-            </div>
-            PO / PSO Mapping
-          </h2>
-          <p className="text-muted-foreground mt-2 text-lg">
-            Accreditation-ready program outcome attainment dashboard.
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500">
+            <Grid3x3 size={18} className="text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black text-white">PO / PSO Mapping</h1>
+            <p className="text-white/40 text-sm">Accreditation-ready program outcome attainment dashboard.</p>
+          </div>
         </div>
         <div className="flex gap-3">
-          <button className="px-4 py-2 border border-white/10 bg-card rounded-lg hover:bg-white/5 transition-colors flex items-center gap-2 font-medium text-sm">
+          <button
+            onClick={handleExportCSV}
+            className="px-4 py-2 border border-white/10 rounded-lg hover:bg-white/5 transition-colors flex items-center gap-2 font-medium text-sm text-white/70"
+          >
             <FileBarChart className="w-4 h-4" /> Export Report
           </button>
           <button
@@ -230,7 +349,10 @@ export default function POPSOMapping() {
             <Save className="w-4 h-4" />
             {isSaving ? 'Saving…' : 'Save Mappings'}
           </button>
-          <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2 font-medium text-sm shadow-lg shadow-purple-500/20">
+          <button
+            onClick={handleDownloadPDF}
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2 font-medium text-sm shadow-lg shadow-purple-500/20"
+          >
             <Download className="w-4 h-4" /> Download PDF
           </button>
         </div>
@@ -511,5 +633,6 @@ export default function POPSOMapping() {
         </div>
       )}
     </div>
+    </AppShell>
   );
 }

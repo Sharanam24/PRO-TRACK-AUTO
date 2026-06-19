@@ -84,7 +84,7 @@ export async function getSmartSlots(req: AuthenticatedRequest, res: Response): P
              WHERE presentation_time >= CURRENT_DATE`
         );
         
-        const bookedTimes = existingSchedules.map((row: { presentation_time: string }) => new Date(row.presentation_time).getTime());
+        const bookedTimes = existingSchedules.map((row) => new Date(String(row.presentation_time)).getTime());
         
         const availableSlots = [];
         let currentDate = new Date();

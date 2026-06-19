@@ -54,9 +54,9 @@ export const GuideGroups: React.FC = () => {
             setIsLoadingGroups(true);
             try {
                 const list = await api.getGroups(token);
-                setGroups(list);
+                setGroups(list as any[]);
                 if (list.length > 0) {
-                    loadGroupDetails(list[0]);
+                    loadGroupDetails(list[0] as any);
                 }
             } catch (err: any) {
                 console.error(err);
@@ -79,7 +79,7 @@ export const GuideGroups: React.FC = () => {
                 api.getProposals(token, group.group_id),
                 api.getGroupChat(token, group.group_id)
             ]);
-            setMembers(Array.isArray(mList) ? mList : []);
+            setMembers(Array.isArray(mList) ? mList as any[] : []);
             setProposals(Array.isArray(pList) ? pList : []);
             setChatMessages(Array.isArray(chatList) ? chatList : []);
         } catch (err: any) {

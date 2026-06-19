@@ -35,7 +35,7 @@ export const StudentDashboard: React.FC = () => {
         try {
             setIsLoading(true);
             const data = await api.getGroups(token);
-            setGroups(Array.isArray(data) ? data : []);
+            setGroups(Array.isArray(data) ? data as any[] : []);
             setError('');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load groups');

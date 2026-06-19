@@ -8,7 +8,8 @@ interface Resource {
     resource_id: string;
     title: string;
     url: string;
-    uploaded_by_email: string;
+    uploaded_by_email?: string;
+    uploaded_by?: string | null;
     created_at: string;
 }
 
@@ -29,7 +30,7 @@ export default function StudentResources() {
         try {
             if (!(user as any)?.group_id || !token) return;
             const data = await api.getGroupResources(token, (user as any).group_id);
-            setResources(data);
+            setResources(data as Resource[]);
         } catch (err: any) {
             setError(err.message || 'Failed to load resources');
         }
@@ -98,7 +99,7 @@ export default function StudentResources() {
                                         <div className="flex items-center gap-3 text-xs text-gray-400">
                                             <span className="flex items-center gap-1">
                                                 <User className="w-3 h-3" />
-                                                {res.uploaded_by_email || 'Unknown'}
+                                                {res.uploaded_by_email || res.uploaded_by || 'Unknown'}
                                             </span>
                                             <span>•</span>
                                             <span>{new Date(res.created_at).toLocaleDateString()}</span>

@@ -49,7 +49,7 @@ export async function addMember(req: AuthenticatedRequest, res: Response): Promi
             [group_id]
         );
 
-        const memberCount = parseInt(memberCounts[0].count);
+        const memberCount = parseInt(String(memberCounts[0].count));
 
         if (memberCount >= 4) {
             res.status(409).json({
@@ -124,7 +124,7 @@ export async function removeMember(req: AuthenticatedRequest, res: Response): Pr
             [group_id, student_id]
         );
 
-        if (parseInt(remainingMembers[0].count) === 0) {
+        if (parseInt(String(remainingMembers[0].count)) === 0) {
             res.status(400).json({
                 error: 'Cannot remove the last member from a group'
             });

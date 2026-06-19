@@ -3,6 +3,7 @@ import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
 import { useAuthStore } from './store/authStore';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Student
 import { StudentDashboardNew } from './pages/Student/StudentDashboardNew';
@@ -37,6 +38,7 @@ export default function App() {
     const { isAuthenticated, user } = useAuthStore();
 
     return (
+        <ErrorBoundary>
         <BrowserRouter>
             <Routes>
                 {/* ── Public ── */}
@@ -59,81 +61,82 @@ export default function App() {
 
                 {/* ── Student ── */}
                 <Route path="/student/dashboard" element={
-                    <ProtectedRoute requiredRoles={['STUDENT']}><StudentDashboardNew /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['STUDENT']}><ErrorBoundary><StudentDashboardNew /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/student/groups" element={
-                    <ProtectedRoute requiredRoles={['STUDENT']}><StudentGroups /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['STUDENT']}><ErrorBoundary><StudentGroups /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/student/logbook" element={
-                    <ProtectedRoute requiredRoles={['STUDENT']}><StudentLogbook /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['STUDENT']}><ErrorBoundary><StudentLogbook /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/student/tasks" element={
-                    <ProtectedRoute requiredRoles={['STUDENT']}><StudentTasks /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['STUDENT']}><ErrorBoundary><StudentTasks /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/student/peer-evaluation" element={
-                    <ProtectedRoute requiredRoles={['STUDENT']}><StudentPeerEvaluation /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['STUDENT']}><ErrorBoundary><StudentPeerEvaluation /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/student/resources" element={
-                    <ProtectedRoute requiredRoles={['STUDENT']}><StudentResources /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['STUDENT']}><ErrorBoundary><StudentResources /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/student/chat/:groupId" element={
-                    <ProtectedRoute requiredRoles={['STUDENT']}><GroupChat /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['STUDENT']}><ErrorBoundary><GroupChat /></ErrorBoundary></ProtectedRoute>
                 } />
 
                 {/* ── Guide ── */}
                 <Route path="/guide/dashboard" element={
-                    <ProtectedRoute requiredRoles={['GUIDE']}><GuideDashboardNew /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['GUIDE']}><ErrorBoundary><GuideDashboardNew /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/guide/groups" element={
-                    <ProtectedRoute requiredRoles={['GUIDE']}><GuideGroups /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['GUIDE']}><ErrorBoundary><GuideGroups /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/guide/reviews" element={
-                    <ProtectedRoute requiredRoles={['GUIDE']}><GuideReviews /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['GUIDE']}><ErrorBoundary><GuideReviews /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/guide/chat/:groupId" element={
-                    <ProtectedRoute requiredRoles={['GUIDE']}><GroupChat /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['GUIDE']}><ErrorBoundary><GroupChat /></ErrorBoundary></ProtectedRoute>
                 } />
 
                 {/* ── Coordinator ── */}
                 <Route path="/coordinator/dashboard" element={
-                    <ProtectedRoute requiredRoles={['COORDINATOR']}><CoordinatorDashboardNew /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['COORDINATOR']}><ErrorBoundary><CoordinatorDashboardNew /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/coordinator/allocations" element={
-                    <ProtectedRoute requiredRoles={['COORDINATOR']}><CoordinatorAllocations /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['COORDINATOR']}><ErrorBoundary><CoordinatorAllocations /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/coordinator/users" element={
-                    <ProtectedRoute requiredRoles={['COORDINATOR']}><CoordinatorUsers /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['COORDINATOR']}><ErrorBoundary><CoordinatorUsers /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/coordinator/rubrics" element={
-                    <ProtectedRoute requiredRoles={['COORDINATOR']}><CoordinatorRubrics /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['COORDINATOR']}><ErrorBoundary><CoordinatorRubrics /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/coordinator/schedules" element={
-                    <ProtectedRoute requiredRoles={['COORDINATOR']}><CoordinatorSchedules /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['COORDINATOR']}><ErrorBoundary><CoordinatorSchedules /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/coordinator/announcements" element={
-                    <ProtectedRoute requiredRoles={['COORDINATOR']}><CoordinatorAnnouncements /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['COORDINATOR']}><ErrorBoundary><CoordinatorAnnouncements /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/coordinator/po-pso" element={
-                    <ProtectedRoute requiredRoles={['COORDINATOR']}><POPSOMapping /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['COORDINATOR']}><ErrorBoundary><POPSOMapping /></ErrorBoundary></ProtectedRoute>
                 } />
 
                 {/* ── Committee ── */}
                 <Route path="/committee/dashboard" element={
-                    <ProtectedRoute requiredRoles={['COMMITTEE']}><CommitteeEvaluationNew /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['COMMITTEE']}><ErrorBoundary><CommitteeEvaluationNew /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/committee/evaluations" element={
-                    <ProtectedRoute requiredRoles={['COMMITTEE']}><CommitteeEvaluations /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['COMMITTEE']}><ErrorBoundary><CommitteeEvaluations /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/committee/results" element={
-                    <ProtectedRoute requiredRoles={['COMMITTEE']}><CommitteeResults /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['COMMITTEE']}><ErrorBoundary><CommitteeResults /></ErrorBoundary></ProtectedRoute>
                 } />
                 <Route path="/committee/history" element={
-                    <ProtectedRoute requiredRoles={['COMMITTEE']}><CommitteeHistoricSearch /></ProtectedRoute>
+                    <ProtectedRoute requiredRoles={['COMMITTEE']}><ErrorBoundary><CommitteeHistoricSearch /></ErrorBoundary></ProtectedRoute>
                 } />
 
                 {/* Fallback */}
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </BrowserRouter>
+        </ErrorBoundary>
     );
 }

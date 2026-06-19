@@ -3,96 +3,80 @@ import { query, pool } from '../config/database.js';
 import { AuthenticatedRequest } from '../middleware/auth.js';
 
 /**
- * GET /api/mappings?batch_year=<year>&type=PO|PSO
- * Returns the mapping matrix as { [criteria_id]: { [outcome_id]: level } }
- * Defaults to empty object (all levels 0) when no rows exist (Requirement 3.4).
+ * GET /api/mappings?type=PO|PSO
  */
 export async function getMappings(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-        const { batch_year, type } = req.query;
+        const { type } = req.query;
 
-        if (!batch_year || !type) {
-            res.status(400).json({ error: 'batch_year and type query parameters are required' });
+        if (!type) {
+            res.status(400).json({ error: 'type query parameter is required' });
             return;
         }
 
         const rows = await query(
-            `SELECT criteria_id, outcome_id, level
+            `SELECT criterion_id, outcome_key, level
              FROM po_pso_mappings
-             WHERE batch_year = $1 AND mapping_type = $2`,
-            [batch_year, type]
+             WHERE mapping_type = $1`,
+            [type]
         );
 
-        // Reshape to { criteria_id: { outcome_id: level } }
         const matrix: Record<string, Record<string, number>> = {};
         for (const row of rows) {
-            const criteriaId = row.criteria_id as string;
-            const outcomeId = row.outcome_id as string;
+            const cid = String(row.criterion_id);
+            const oid = String(row.outcome_key);
             const level = Number(row.level);
-            if (!matrix[criteriaId]) matrix[criteriaId] = {};
-            matrix[criteriaId]![outcomeId] = level;
+            if (!matrix[cid]) matrix[cid] = {};
+            matrix[cid]![oid] = level;
         }
 
-        res.status(200).json({ batch_year, type, mappings: matrix });
+        res.status(200).json({ type, mappings: matrix });
     } catch (error) {
         console.error('Get mappings error:', error);
         res.status(500).json({ error: 'Failed to fetch mappings' });
     }
 }
 
-interface MappingRow {
-    criteria_id: string;
-    outcome_id: string;
-    level: number;
-}
-
 /**
  * POST /api/mappings — COORDINATOR only
- * Body: { batch_year: number, type: 'PO'|'PSO', mappings: { [criteria_id]: { [outcome_id]: level } } }
- * Validates levels are integers in [0,3], then upserts in a single transaction (Requirement 3.2).
+ * Body: { mapping_type: 'PO'|'PSO', mappings: { [criterion_id]: { [outcome_key]: level } } }
  */
 export async function saveMappings(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
-        const { batch_year, type, mappings } = req.body as {
-            batch_year: number;
-            type: string;
+        const { mapping_type, mappings } = req.body as {
+            mapping_type: string;
             mappings: Record<string, Record<string, number>>;
         };
 
-        if (!batch_year || !type || !mappings) {
-            res.status(400).json({ error: 'batch_year, type, and mappings are required' });
+        if (!mapping_type || !mappings) {
+            res.status(400).json({ error: 'mapping_type and mappings are required' });
             return;
         }
 
-        if (!['PO', 'PSO'].includes(type)) {
-            res.status(400).json({ error: 'type must be PO or PSO' });
+        if (!['PO', 'PSO'].includes(mapping_type)) {
+            res.status(400).json({ error: 'mapping_type must be PO or PSO' });
             return;
         }
 
-        // Flatten and validate (Requirement 3.5)
-        const rows: MappingRow[] = [];
+        const rows: { criterion_id: string; outcome_key: string; level: number }[] = [];
         const details: { field: string; message: string }[] = [];
 
-        for (const [criteriaId, outcomes] of Object.entries(mappings)) {
-            for (const [outcomeId, level] of Object.entries(outcomes)) {
-                if (!Number.isInteger(level) || level < 0 || level > 3) {
+        for (const [criterionId, outcomes] of Object.entries(mappings)) {
+            for (const [outcomeKey, level] of Object.entries(outcomes)) {
+                const numLevel = Number(level);
+                if (!Number.isInteger(numLevel) || numLevel < 0 || numLevel > 3) {
                     details.push({
-                        field: `mappings.${criteriaId}.${outcomeId}`,
-                        message: `Level must be an integer between 0 and 3, got ${level}`,
+                        field: `mappings.${criterionId}.${outcomeKey}`,
+                        message: `Level must be 0-3, got ${level}`,
                     });
                 } else {
-                    rows.push({ criteria_id: criteriaId, outcome_id: outcomeId, level });
+                    rows.push({ criterion_id: criterionId, outcome_key: outcomeKey, level: numLevel });
                 }
             }
         }
 
         if (details.length > 0) {
-            res.status(422).json({
-                error: 'Validation failed',
-                code: 'VALIDATION_ERROR',
-                details,
-                timestamp: new Date().toISOString(),
-            });
+            res.status(422).json({ error: 'Validation failed', details });
             return;
         }
 
@@ -101,19 +85,15 @@ export async function saveMappings(req: AuthenticatedRequest, res: Response): Pr
 
         try {
             await client.query('BEGIN');
-
             for (const row of rows) {
                 await client.query(
-                    `INSERT INTO po_pso_mappings
-                       (mapping_type, criteria_id, outcome_id, level, batch_year, created_by, updated_at)
-                     VALUES ($1, $2, $3, $4, $5, $6, NOW())
-                     ON CONFLICT (mapping_type, criteria_id, outcome_id, batch_year)
-                     DO UPDATE SET level = EXCLUDED.level,
-                                   updated_at = NOW()`,
-                    [type, row.criteria_id, row.outcome_id, row.level, batch_year, userId ?? null]
+                    `INSERT INTO po_pso_mappings (mapping_type, criterion_id, outcome_key, level, updated_by, updated_at)
+                     VALUES ($1, $2, $3, $4, $5, NOW())
+                     ON CONFLICT (criterion_id, mapping_type, outcome_key)
+                     DO UPDATE SET level = EXCLUDED.level, updated_at = NOW()`,
+                    [mapping_type, row.criterion_id, row.outcome_key, row.level, userId ?? null]
                 );
             }
-
             await client.query('COMMIT');
         } catch (err) {
             await client.query('ROLLBACK');

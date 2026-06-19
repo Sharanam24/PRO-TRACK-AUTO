@@ -82,7 +82,18 @@ export default function BulkUpload({ isOpen, onClose, onUpload }: BulkUploadProp
               <p className="text-xs font-medium">Need a template?</p>
               <p className="text-[11px] text-muted-foreground">Download CSV template with required columns</p>
             </div>
-            <button className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">Download Template</button>
+            <button
+              onClick={() => {
+                const csv = 'prn_no,email,full_name\nPRN001,student1@example.com,Student One\nPRN002,student2@example.com,Student Two';
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'student-whitelist-template.csv';
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">Download Template</button>
           </div>
 
           {/* Status */}

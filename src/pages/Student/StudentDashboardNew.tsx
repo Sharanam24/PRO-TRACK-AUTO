@@ -50,7 +50,7 @@ export const StudentDashboardNew: React.FC = () => {
             setGroups(list);
 
             // Fetch details for active group if exists
-            const active = list.find((g: Group) => g.status === 'ACTIVE' || g.status === 'WAITING_ALLOCATION');
+            const active = list.find((g) => g.status === 'ACTIVE' || g.status === 'WAITING_ALLOCATION');
             if (active) {
                 try {
                     const details = await api.getGroupById(token, active.group_id);
@@ -82,9 +82,12 @@ export const StudentDashboardNew: React.FC = () => {
             if (fetchedNote && fetchedNote.content) {
                 setScratchpad(fetchedNote.content);
             }
-            if (fetchedSettings.project_timelines) {
+            const settingsMap = Array.isArray(fetchedSettings)
+                ? Object.fromEntries((fetchedSettings as any[]).map((s: any) => [s.key, s.value]))
+                : fetchedSettings as Record<string, any>;
+            if (settingsMap['project_timelines']) {
                 const batchYear = (user as any)?.batch_year;
-                const batchTimelines = batchYear ? fetchedSettings.project_timelines[batchYear.toString()] : null;
+                const batchTimelines = batchYear ? settingsMap['project_timelines'][batchYear.toString()] : null;
                 setTimelines(batchTimelines || {
                     'phase1': 'Jan 31',
                     'phase2': 'Mar 31',

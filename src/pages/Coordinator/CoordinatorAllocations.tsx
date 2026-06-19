@@ -46,14 +46,14 @@ export const CoordinatorAllocations: React.FC = () => {
                 api.getPendingAllocation(token),
                 api.getAvailableGuides(token)
             ]);
-            setPendingGroups(pendingRes.groups || []);
-            setAvailableGuides(guidesRes.guides || []);
-            
-            // If currently selected group/guide is no longer available, deselect them
-            if (selectedGroup && !pendingRes.groups?.find((g: any) => g.group_id === selectedGroup.group_id)) {
+            const groups = Array.isArray(pendingRes) ? pendingRes : (pendingRes as any).groups || [];
+            const guides = Array.isArray(guidesRes) ? guidesRes : (guidesRes as any).guides || [];
+            setPendingGroups(groups);
+            setAvailableGuides(guides);
+            if (selectedGroup && !groups.find((g: PendingGroup) => g.group_id === selectedGroup.group_id)) {
                 setSelectedGroup(null);
             }
-            if (selectedGuide && !guidesRes.guides?.find((g: any) => g.faculty_id === selectedGuide.faculty_id)) {
+            if (selectedGuide && !guides.find((g: AvailableGuide) => g.faculty_id === selectedGuide.faculty_id)) {
                 setSelectedGuide(null);
             }
         } catch (err) {

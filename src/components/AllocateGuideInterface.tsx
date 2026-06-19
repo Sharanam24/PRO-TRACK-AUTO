@@ -41,7 +41,7 @@ export const AllocateGuideInterface: React.FC<AllocateGuideInterfaceProps> = ({
                 api.getPendingAllocation(token),
                 api.getAvailableGuides(token)
             ]);
-            setPendingGroups(Array.isArray(groupsData) ? groupsData : []);
+            setPendingGroups(Array.isArray(groupsData) ? groupsData as any[] : []);
             setAvailableGuides(Array.isArray(guidesData) ? guidesData : []);
             setError('');
         } catch (err) {

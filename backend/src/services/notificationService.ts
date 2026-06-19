@@ -55,7 +55,7 @@ export async function createNotification(
     ],
   );
 
-  const notification = rows[0] as Notification;
+  const notification = rows[0] as unknown as Notification;
 
   // Emit real-time notification badge count (Requirement 11.1, 11.2)
   try {

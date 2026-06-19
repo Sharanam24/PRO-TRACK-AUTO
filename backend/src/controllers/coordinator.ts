@@ -21,7 +21,7 @@ export const exportYearlyReport = async (req: Request, res: Response): Promise<v
         
         // Simple JSON to CSV
         interface ReportRow { group_name: string; group_status: string; guide_email: string | null; final_marks: number | null; students: { prn: string; email: string }[] }
-        const data = result as ReportRow[];
+        const data = result as unknown as ReportRow[];
         if (data.length === 0) {
             res.send('No data available');
             return;

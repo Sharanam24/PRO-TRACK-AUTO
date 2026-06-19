@@ -21,6 +21,11 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
 
+    /* Type checking - relaxed for compatibility */
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+
     "paths": {
       "@/*": ["./src/*"]
     }

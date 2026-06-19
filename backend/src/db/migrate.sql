@@ -62,3 +62,18 @@ CREATE INDEX IF NOT EXISTS idx_milestone_group_due ON milestone_progress(group_i
 ALTER TABLE project_groups
     ADD COLUMN IF NOT EXISTS risk_level VARCHAR(10) NOT NULL DEFAULT 'ON_TRACK'
         CHECK (risk_level IN ('ON_TRACK', 'AT_RISK', 'CRITICAL'));
+
+-- Migration: evaluation_drafts table for live grading draft auto-save (Requirements 3.1, 3.2, 3.6, 9.3)
+CREATE TABLE IF NOT EXISTS evaluation_drafts (
+    draft_id      UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    group_id      UUID NOT NULL REFERENCES project_groups(group_id) ON DELETE CASCADE,
+    phase         evaluation_phase NOT NULL,
+    rubric_scores JSONB NOT NULL DEFAULT '{}',
+    total_marks   NUMERIC(5,2) NOT NULL DEFAULT 0,
+    created_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(group_id, phase)
+);
+
+CREATE INDEX IF NOT EXISTS idx_evaluation_drafts_group_phase
+    ON evaluation_drafts(group_id, phase);

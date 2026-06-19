@@ -56,7 +56,7 @@ export const CoordinatorRubrics: React.FC = () => {
         if (!token || !templateName.trim()) return;
         setIsSaving(true);
         try {
-            await api.saveRubric(token, templateName, criteria);
+            await api.saveRubric(token, templateName, criteria as unknown as Record<string, unknown>);
             setTemplateName('');
             setCriteria([{ id: '1', name: 'Originality', maxMarks: 10 }]);
             fetchRubrics();

@@ -19,10 +19,10 @@ export async function getConnection(): Promise<PoolClient> {
     return pool.connect();
 }
 
-export async function query(text: string, params?: unknown[]) {
+export async function query<T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<T[]> {
     try {
         const result = await pool.query(text, params);
-        return result.rows;
+        return result.rows as unknown as T[];
     } catch (error) {
         console.error('Database query error:', error);
         throw error;

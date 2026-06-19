@@ -19,7 +19,7 @@ interface Member {
     student_id: string;
     email: string;
     prn_no: string;
-    roll_no: string;
+    roll_no?: string;
 }
 
 interface Proposal {
@@ -63,8 +63,8 @@ export const StudentGroups: React.FC = () => {
             const data = await api.getGroups(token);
             const list = Array.isArray(data) ? data : [];
             if (list.length > 0) {
-                setGroups(list);
-                setSelectedGroup(list[0]);
+                setGroups(list as any[]);
+                setSelectedGroup(list[0] as any);
                 setMembers([]);
                 setProposals([]);
             } else {
@@ -99,7 +99,7 @@ export const StudentGroups: React.FC = () => {
                 ]);
                 const mList = Array.isArray(membersData) ? membersData : [];
                 const pList = Array.isArray(proposalsData) ? proposalsData : [];
-                setMembers(mList);
+                setMembers(mList as any[]);
                 setProposals(pList);
                 setChatMessages(Array.isArray(chatMessages) ? chatMessages : []);
             }
@@ -136,7 +136,7 @@ export const StudentGroups: React.FC = () => {
                 await api.addMember(token, selectedGroup.group_id, newPrn.trim());
                 // Re-fetch members to get exact DB rows
                 const mData = await api.getMembers(token, selectedGroup.group_id);
-                setMembers(Array.isArray(mData) ? mData : []);
+                setMembers(Array.isArray(mData) ? mData as any[] : []);
             }
             showToast('success', 'Member added successfully!');
             setShowAddMemberModal(false);

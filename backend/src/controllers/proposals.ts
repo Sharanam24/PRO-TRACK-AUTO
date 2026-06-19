@@ -31,7 +31,7 @@ export async function submitProposal(req: AuthenticatedRequest, res: Response): 
 
             const settingsMap: Record<string, string> = {};
             for (const row of settingsRows) {
-                settingsMap[row.key] = row.value;
+                settingsMap[String(row.key)] = String(row.value);
             }
 
             const windowOpenVal = settingsMap['entry_window_open'];

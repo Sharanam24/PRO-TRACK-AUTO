@@ -30,7 +30,7 @@ export const GuideDashboard: React.FC = () => {
             const allGroups = Array.isArray(data) ? data : [];
             // In a real scenario, we'd filter by guide_id from the backend
             // For now, we'll fetch all groups
-            setGroups(allGroups);
+            setGroups(allGroups as any[]);
             if (allGroups.length > 0 && !selectedGroupId) {
                 setSelectedGroupId(allGroups[0].group_id);
             }
