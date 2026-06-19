@@ -14,6 +14,7 @@ interface Group {
 
 interface Logbook {
     log_id: string;
+    group_id: string;
     week_number: number;
     work_summary: string;
     guide_status: string;
